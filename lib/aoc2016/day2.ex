@@ -1,5 +1,9 @@
 defmodule Aoc2016.Day2 do
-  @keypad {{"1", "2", "3"}, {"4", "5", "6"}, {"7", "8", "9"}}
+  @keypad {
+                {"1", "2", "3"},
+                {"4", "5", "6"},
+                {"7", "8", "9"}
+          }
 
   @doc ~S"""
   You arrive at Easter Bunny Headquarters under cover of darkness. However, you
@@ -33,7 +37,7 @@ defmodule Aoc2016.Day2 do
   def batchroom_code(instructions) do
     instructions
     |> Enum.map_reduce({0, 0}, &code_point/2)
-    |> to_code
+    |> to_code(@keypad)
   end
 
   def code_point(instruction, current) when is_bitstring(instruction) do
@@ -44,20 +48,71 @@ defmodule Aoc2016.Day2 do
     {next, next}
   end
   def code_point([], current), do: current
-  def code_point([h | rest], current), do: code_point(rest, next(current, h))
+  def code_point([h | rest], current), do: code_point(rest, next(current, h, 2))
 
-  defp next({x, 0}, "U"), do: {x, 0}
-  defp next({x, y}, "U"), do: {x, y - 1}
-  defp next({x, 2}, "D"), do: {x, 2}
-  defp next({x, y}, "D"), do: {x, y + 1}
-  defp next({0, y}, "L"), do: {0, y}
-  defp next({x, y}, "L"), do: {x - 1, y}
-  defp next({2, y}, "R"), do: {2, y}
-  defp next({x, y}, "R"), do: {x + 1, y}
+  defp next({x, 0}, "U", _), do: {x, 0}
+  defp next({x, y}, "U", _), do: {x, y - 1}
+  defp next({x, max}, "D", max), do: {x, max}
+  defp next({x, y}, "D", _), do: {x, y + 1}
+  defp next({0, y}, "L", _), do: {0, y}
+  defp next({x, y}, "L", _), do: {x - 1, y}
+  defp next({max, y}, "R", max), do: {max, y}
+  defp next({x, y}, "R", _), do: {x + 1, y}
 
-  defp to_code({points, _}) do
+  defp to_code({points, _}, keypad) when is_list(points) do
     points
-    |> Enum.map(fn({x, y}) -> @keypad |> elem(y) |> elem(x) end)
+    |> Enum.map(&to_code(&1, keypad))
     |> Enum.join("")
+  end
+  defp to_code({x, y}, keypad), do: keypad |> elem(y) |> elem(x)
+
+  @real_keypad {
+                {nil, nil, "1", nil, nil},
+                {nil, "2", "3", "4", nil},
+                {"5", "6", "7", "9", "9"},
+                {nil, "A", "B", "C", nil},
+                {nil, nil, "D", nil, nil},
+               }
+  @doc ~S"""
+  You finally arrive at the bathroom (it's a several minute walk from the lobby
+  so visitors can behold the many fancy conference rooms and water coolers on
+  this floor) and go to punch in the code. Much to your bladder's dismay, the
+  keypad is not at all like you imagined it. Instead, you are confronted with
+  the result of hundreds of man-hours of bathroom-keypad-design meetings:
+
+      1
+    2 3 4
+  5 6 7 8 9
+    A B C
+      D
+
+  ## You still start at "5" and stop when you're at an edge, but given the same
+     instructions as above, the outcome is very different
+
+    iex> Aoc2016.Day2.real_batchroom_code(["ULL", "RRDDD", "LURDL", "UUUUD"])
+    "5DB3"
+  """
+  def real_batchroom_code(instructions) do
+    instructions
+    |> Enum.map_reduce({0, 2}, &real_code_point(&1, &2, @real_keypad))
+    |> to_code(@real_keypad)
+  end
+
+  def real_code_point(instruction, current, keypad) when is_bitstring(instruction) do
+    next =
+      instruction
+      |> String.graphemes
+      |> real_code_point(current, keypad)
+    {next, next}
+  end
+  def real_code_point([], current, keypad), do: current
+  def real_code_point([h | rest], current, keypad) do
+    candidate = next(current, h, 4)
+    next_current = case to_code(candidate, keypad) do
+      nil -> current
+      _  -> candidate
+    end
+
+    real_code_point(rest, next_current, keypad)
   end
 end
