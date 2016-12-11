@@ -39,10 +39,14 @@ defmodule Aoc2016.Day6 do
   "my"
   """
   def decode(messages) do
+    do_decode(messages, &max_occurence/1)
+  end
+
+  defp do_decode(messages, mapping_func) do
     messages
     |> String.split("\n")
     |> rotate([])
-    |> Enum.map(&max_occurence/1)
+    |> Enum.map(mapping_func)
     |> Enum.join("")
   end
 
@@ -73,6 +77,35 @@ defmodule Aoc2016.Day6 do
     |> Enum.group_by(&Base.encode16/1)
     |> Dict.values
     |> Enum.max_by(&length/1)
+    |> Enum.at(0)
+  end
+
+  @doc ~S"""
+  Of course, that would be the message - if you hadn't agreed to use a modified
+  repetition code instead.
+
+  In this modified code, the sender instead transmits what looks like random
+  data, but for each character, the character they actually want to send is
+  slightly less likely than the others. Even after signal-jamming noise, you can
+  look at the letter distributions in each column and choose the least common
+  letter to reconstruct the original message.
+
+  In the above example, the least common character in the first column is a; in
+  the second, d, and so on. Repeating this process for the remaining characters
+  produces the original message, advent.
+
+  iex> Aoc2016.Day6.decode2("eedadn\ndrvtee\neandsr\nraavrd\natevrs\ntsrnev\nsdttsa\nrasrtv\nnssdts\nntnada\nsvetve\ntesnvt\nvntsnd\nvrdear\ndvrsen\nenarar")
+  "advent"
+  """
+  def decode2(messages) do
+    do_decode(messages, &min_occurence/1)
+  end
+
+  defp min_occurence(chars) do
+    chars
+    |> Enum.group_by(&Base.encode16/1)
+    |> Dict.values
+    |> Enum.min_by(&length/1)
     |> Enum.at(0)
   end
 end
