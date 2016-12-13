@@ -90,6 +90,20 @@ defmodule Aoc2016.Day8 do
     |> to_list
   end
 
+  @doc ~S"""
+  You notice that the screen is only capable of displaying capital letters; in
+  the font it uses, each letter is 5 pixels wide and 6 tall.
+
+  iex> Aoc2016.Day8.to_s([["a", ".", "c"], [".", "e", "f"]])
+  "a c\n ef"
+  """
+  def to_s(display_array) do
+    display_array
+    |> Enum.map(&Enum.join(&1, ""))
+    |> Enum.join("\n")
+    |> String.replace(".", " ")
+  end
+
   defp do_display(display, []), do: display
   defp do_display(display, [instruction | rest]) do
     display
