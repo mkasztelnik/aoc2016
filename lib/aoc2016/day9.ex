@@ -56,23 +56,19 @@ defmodule Aoc2016.Day9 do
   "X(3x3)ABC(3x3)ABCY"
   """
   def extend(code) do
-    code
-    |> String.graphemes
-    |> do_extend([])
+    do_extend(code, "")
   end
 
-  defp do_extend(["(" | t], result) do
+  defp do_extend(<<"(", t :: binary>>, result) do
     %{"n" => n, "subsequent" => subsequent, "rest" => rest} = parse(t)
 
-    rest
-    |> String.graphemes
-    |> do_extend([String.duplicate(subsequent, String.to_integer(n)) | result])
+    do_extend(rest, result <> String.duplicate(subsequent, String.to_integer(n)))
   end
-  defp do_extend([], result), do: result |> Enum.reverse() |> Enum.join("")
-  defp do_extend([char | rest], result), do: do_extend(rest, [char | result])
+  defp do_extend(<<>>, result), do: result
+  defp do_extend(<<char :: utf8, rest :: binary>>, result),
+    do: do_extend(rest, result <> <<char>>)
 
-  defp parse(tab) do
-    rest = Enum.join(tab, "")
+  defp parse(rest) do
     %{"size" => size, "n" => n, "rest" => rest} =
       Regex.named_captures(~r/(?<size>\d+)x(?<n>\d+)\)(?<rest>.*)/, rest)
     %{"subsequent" => subsequent, "rest" => rest} =
@@ -123,18 +119,15 @@ defmodule Aoc2016.Day9 do
   445
   """
   def extended_length(code) do
-    code
-    |> String.graphemes
-    |> calculate_length(0)
+    calculate_length(code, 0)
   end
 
-  defp calculate_length(["(" | t], code_size) do
+  defp calculate_length(<<"(", t :: binary >>, code_size) do
     %{"n" => n, "subsequent" => subsequent, "rest" => rest} = parse(t)
 
-    rest
-    |> String.graphemes
-    |> calculate_length(code_size + String.to_integer(n) * extended_length(subsequent))
+    calculate_length(rest, code_size + String.to_integer(n) * extended_length(subsequent))
   end
-  defp calculate_length([], code_size), do: code_size
-  defp calculate_length([_ | rest], code_size), do: calculate_length(rest, code_size + 1)
+  defp calculate_length(<<>>, code_size), do: code_size
+  defp calculate_length(<<_ :: utf8, rest :: binary>>, code_size),
+    do: calculate_length(rest, code_size + 1)
 end
