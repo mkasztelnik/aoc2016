@@ -46,8 +46,8 @@ defmodule Aoc2016.Day10 do
   Based on your instructions, what is the number of the bot that is responsible
   for comparing value-61 microchips with value-17 microchips?
 
-  iex> Aoc2016.Day10.run("value 5 goes to bot 2\nbot 2 gives low to bot 1 and high to bot 0\nvalue 3 goes to bot 1\nbot 1 gives low to output 1 and high to bot 0\nbot 0 gives low to output 2 and high to output 0\nvalue 2 goes to bot 2")
-  123
+  What do you get if you multiply together the values of one chip in each of
+  outputs 0, 1, and 2?
   """
   def run(instructions_str) do
     instructions = instructions_str
@@ -60,8 +60,6 @@ defmodule Aoc2016.Day10 do
     |> Enum.each(fn(%{nr:  nr, value: value}) ->
         Aoc2016.Day10.Dispatcher.dispatch({:robot, nr}, value)
       end)
-
-    # Aoc2016.Day10.Dispatcher.stop()
   end
 
   defp train(instructions), do: train([], instructions)
@@ -93,7 +91,7 @@ defmodule Aoc2016.Day10.Dispatcher do
 
   def start_link(instructions) do
     GenServer.start_link(__MODULE__,
-      %{outputs: {}, robots: start_robots(instructions)},
+      %{outputs: %{}, robots: start_robots(instructions)},
       name: __MODULE__)
   end
 
@@ -107,7 +105,7 @@ defmodule Aoc2016.Day10.Dispatcher do
   end
 
   def dispatch(to, value) do
-    GenServer.cast(__MODULE__, {to, value})
+    GenServer.call(__MODULE__, {to, value})
   end
 
   def stop() do
@@ -115,14 +113,18 @@ defmodule Aoc2016.Day10.Dispatcher do
     GenServer.stop(__MODULE__)
   end
 
-  def handle_cast({{:robot, nr}, value}, state) do
-    GenServer.cast(state.robots[nr], value)
-    {:noreply, state}
+  def outputs() do
+    GenServer.call(__MODULE__, :outputs)
   end
 
-  def handle_cast({{:output, nr}, value}, state) do
-    # {:noreply, put_in(state, [:outputs, nr], value)}
-    {:noreply, state}
+  def handle_call({{:robot, nr}, value}, _from, state) do
+    GenServer.cast(state.robots[nr], value)
+    {:reply, :ok, state}
+  end
+
+  def handle_call({{:output, nr}, value}, _from, state) do
+    IO.puts "state outputs #{inspect(state.outputs)}"
+    {:reply, :ok, put_in(state, [:outputs, nr], value)}
   end
 
   def handle_call(:stop, _from, state) do
@@ -131,6 +133,11 @@ defmodule Aoc2016.Day10.Dispatcher do
     |> Enum.each(&GenServer.stop(&1))
 
     {:reply, :ok, state}
+  end
+
+  def handle_call(:outputs, _from, state) do
+    IO.puts "state outputs #{inspect(state.outputs)}"
+    {:reply, state.outputs, state}
   end
 end
 
